@@ -25,8 +25,36 @@ const MongoStore = require('connect-mongo');
 const PORT = process.argv[2] ?? process.env.PORT;
 const FACEBOOK_APP_ID = process.argv[3] ?? process.env.FACEBOOK_APP_ID;
 const FACEBOOK_APP_SECRET =  process.argv[4] ?? process.env.FACEBOOK_APP_SECRET;
+const SERVER_MODE =  process.argv[5] ?? 'fork';
 
-console.log('Proceso N°: ', process.pid);
+const cluster = require('cluster');
+const numCpus = require('os').cpus().length;
+
+if(SERVER_MODE === 'cluster' && cluster.isMaster){
+  console.log(`PID MASTER ${process.pid}`);
+  console.log(numCpus);
+  for(let i=0; i<numCpus; i++){
+    cluster.fork();
+  }
+
+  cluster.on('exit', worker => {
+    console.log('Worker', worker.process.pid, 'died', new Date().toLocaleString());
+    cluster.fork();
+  });
+} else {
+  //console.log(parseInt(process.argv[2]))
+  const PORT = parseInt(process.argv[2]) || 8080
+
+  app.get('/', (req,res) => {
+      res.send(`Servidor express en ${PORT} - <b>PID ${process.pid}</b> - ${new Date().toLocaleString()}`)
+  })
+
+  app.listen(PORT, err => {
+      if(!err) console.log(`Servidor express escuchando en el puerto ${PORT} - PID WORKER ${process.pid}`)
+  })
+}
+
+//console.log('Proceso N°: ', process.pid);
 
 /* -------------- PASSPORT ----------------- */
 const passport = require('passport');

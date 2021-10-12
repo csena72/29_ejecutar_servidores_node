@@ -9,6 +9,7 @@ exports.infoRender = (req, resp) => {
     data.path = process.execPath;
     data.pid = process.pid;
     data.folder = process.cwd();
+    data.cpus = require('os').cpus().length;
 
     resp.render('info', {data: data});
 };
